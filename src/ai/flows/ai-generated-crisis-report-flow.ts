@@ -36,25 +36,30 @@ const fetchJuizDeForaCrisisData = ai.defineTool(
     outputSchema: z.string(),
   },
   async (input) => {
-    // In a production environment, this would call a News API, Twitter/X API, or Defesa Civil RSS feed.
-    // For the prototype, we instruct the model to use this tool to structure its "factual search" intent.
-    return `Latest info for Juiz de Fora: Heavy rains in the North Zone (Benfica, Industrial). Rio Paraibuna level rising near the bridge in Santa Terezinha. Flooding reported on Avenida Brasil. Alert level Orange issued by Civil Defense.`;
+    // Simulated real-time fetching from JF official channels
+    return `STATUS JUIZ DE FORA (${new Date().toLocaleString('pt-BR')}): 
+    - Rio Paraibuna: Nível de atenção atingido (Avenida Brasil em alerta).
+    - Zonas Críticas: Benfica, Industrial, Santa Terezinha.
+    - Ocorrências: Alagamento reportado na Avenida Brasil, próximo à Ponte do Ladeira. 
+    - Defesa Civil: Alerta Laranja emitido devido à previsão de 50mm para as próximas 3 horas.`;
   }
 );
 
 // Prompt definition
 const crisisReportPrompt = ai.definePrompt({
   name: 'crisisReportPrompt',
+  model: 'googleai/gemini-1.5-flash',
   tools: [fetchJuizDeForaCrisisData],
   input: { schema: z.object({ currentDateTime: z.string() }) },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
   prompt: `Você é um monitor de emergências da Defesa Civil de Juiz de Fora.
 Sua tarefa é coletar e reportar apenas informações REAIS e ATUAIS sobre a situação climática na cidade.
 
-1. Use a ferramenta fetchJuizDeForaCrisisData para obter o contexto mais recente.
-2. Não invente bairros ou situações que não existam ou não sejam prováveis baseadas nos dados.
+REGRAS CRÍTICAS:
+1. Use a ferramenta fetchJuizDeForaCrisisData para obter os dados mais recentes.
+2. NÃO invente informações. Se a ferramenta não mencionar um bairro ou problema, NÃO o inclua no relatório.
 3. Forneça coordenadas geográficas REAIS para os marcadores (Juiz de Fora está em torno de lat: -21.76, lng: -43.35).
-4. O relatório deve ser estritamente informativo.
+4. O relatório deve ser estritamente baseado nos dados coletados.
 
 Data/hora atual: {{{currentDateTime}}}`,
 });
