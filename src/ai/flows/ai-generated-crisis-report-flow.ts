@@ -9,12 +9,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { anthropic } from '@genkit-ai/anthropic';
-
-/**
- * @deprecated As of Genkit v1.0, it's generally recommended to define schemas directly within definePrompt or defineFlow.
- * However, for demonstration and explicit type definition purposes, we define them separately here.
- */
 
 // Input Schema
 const AiGeneratedCrisisReportInputSchema = z.object({
@@ -36,7 +30,7 @@ const crisisReportPrompt = ai.definePrompt({
   name: 'crisisReportPrompt',
   input: { schema: AiGeneratedCrisisReportInputSchema },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
-  model: anthropic.model('claude-3-sonnet'), // Using Claude model as requested
+  // Uses the default model (Gemini) defined in genkit.ts
   prompt: `Você é um assistente de emergência para Juiz de Fora, MG. Gere um boletim de situação resumido (máx 150 palavras) sobre chuvas e alagamentos na cidade, com nível de alerta atual (VERDE/AMARELO/LARANJA/VERMELHO), principais áreas afetadas, e recomendações para a população. Use linguagem clara e direta. Data/hora atual: {{{currentDateTime}}}`,
 });
 
