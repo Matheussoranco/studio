@@ -54,14 +54,27 @@
   height: 100% !important;
   background: #0f172a !important;
   z-index: 0 !important;
+  /* Create a stacking context so internal z-indexes stay contained */
+  isolation: isolate;
 }
 
-.leaflet-pane {
-  z-index: 0 !important;
-}
+/* Keep internal pane hierarchy intact — only constrain the top-level container */
+/* Do NOT override .leaflet-pane z-indexes: tiles=200, overlays=400, markers=600, popups=700 */
 
+/* Leaflet controls: layers toggle, zoom, etc — above map panes but below app UI */
 .leaflet-top, .leaflet-bottom {
-  z-index: 10 !important;
+  z-index: 800 !important;
+}
+
+/* Ensure popups render above everything inside the map */
+.leaflet-popup {
+  z-index: 900 !important;
+}
+
+/* Fix for custom div icons to be clickable */
+.custom-div-icon {
+  background: transparent !important;
+  border: none !important;
 }
 
 .pulse-red {

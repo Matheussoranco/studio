@@ -67,7 +67,7 @@ export default function DonationManager() {
               <CardFooter className="p-4 pt-0">
                 <Button 
                   className="w-full bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs h-9"
-                  onClick={() => openInGoogleMaps(center.address || "")}
+                  onClick={() => openInGoogleMaps(center.address ?? center.name)}
                 >
                   <ExternalLink className="w-3.5 h-3.5 mr-2" />
                   Como Chegar

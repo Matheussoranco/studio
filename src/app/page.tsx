@@ -128,9 +128,9 @@ function DonationsList({ centers }: { centers: Location[] }) {
           <CardContent className="p-3 space-y-2">
             <h4 className="text-xs font-black text-white uppercase">{c.name}</h4>
             <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold">
-               <MapPin size={12} className="text-blue-500" /> {c.address}
+               <MapPin size={12} className="text-blue-500" /> {c.address ?? 'Endereço não informado'}
             </div>
-            <Button className="w-full bg-slate-700 h-8 text-[9px] font-black uppercase" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address + " Juiz de Fora")}`)}>
+            <Button className="w-full bg-slate-700 h-8 text-[9px] font-black uppercase" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((c.address ?? c.name) + " Juiz de Fora")}`)}>
                <ExternalLink size={12} className="mr-2" /> Como Chegar
             </Button>
           </CardContent>

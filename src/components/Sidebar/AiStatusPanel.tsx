@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useState, useEffect, useCallback, useRef, useTransition } from 'react';
 import { generateCrisisReport, AiGeneratedCrisisReportOutput } from '@/ai/flows/ai-generated-crisis-report-flow';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, MapPin, Cpu, Radio, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { RefreshCw, MapPin, Cpu, Radio, ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
@@ -25,6 +25,12 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  // Use refs for callbacks to avoid stale closure issues in useEffect
+  const onMarkersUpdateRef = useRef(onMarkersUpdate);
+  const onAlertChangeRef = useRef(onAlertChange);
+  useEffect(() => { onMarkersUpdateRef.current = onMarkersUpdate; }, [onMarkersUpdate]);
+  useEffect(() => { onAlertChangeRef.current = onAlertChange; }, [onAlertChange]);
+
   const fetchReport = useCallback(async () => {
     if (loading || isPending) return;
     setLoading(true);
@@ -39,10 +45,15 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
       startTransition(() => {
         setReport(enrichedReport);
-        if (onMarkersUpdate) onMarkersUpdate(data.markers);
-        if (onAlertChange) onAlertChange(data.alertLevel);
+        onMarkersUpdateRef.current?.(data.markers);
+        onAlertChangeRef.current?.(data.alertLevel);
         setStorageItem(STORAGE_KEYS.LAST_AI_REPORT, { ...enrichedReport, storageTimestamp: new Date().toISOString() });
         setCountdown(REFRESH_INTERVAL);
+      });
+
+      toast({
+        title: "Boletim Atualizado",
+        description: `Dados sincronizados às ${timestamp}.`,
       });
     } catch (error: any) {
       console.error('Fetch Error:', error);
@@ -53,6 +64,12 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
       if (msg.includes('API_KEY') || msg.includes('401') || msg.includes('403') || msg.includes('GOOGLE_GENAI_API_KEY')) {
         userMsg = "Chave da API Gemini não configurada ou inválida.";
         toastDesc = "Configure GOOGLE_GENAI_API_KEY no arquivo .env.local e reinicie o servidor.";
+      } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('ECONNREFUSED')) {
+        userMsg = "Erro de conexão com o servidor de IA.";
+        toastDesc = "Verifique sua conexão de internet e tente novamente.";
+      } else if (msg.includes('429') || msg.includes('quota') || msg.includes('rate')) {
+        userMsg = "Limite de requisições da API excedido.";
+        toastDesc = "Aguarde alguns minutos e tente novamente.";
       }
       
       setError(userMsg);
@@ -64,19 +81,25 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } finally {
       setLoading(false);
     }
-  }, [toast, onMarkersUpdate, onAlertChange, loading, isPending]);
+  }, [toast, loading, isPending]);
 
   useEffect(() => {
     const cached = getStorageItem<any>(STORAGE_KEYS.LAST_AI_REPORT, null);
     if (cached) {
       setReport(cached);
-      if (onMarkersUpdate) onMarkersUpdate(cached.markers);
-      if (onAlertChange) onAlertChange(cached.alertLevel);
+      onMarkersUpdateRef.current?.(cached.markers ?? []);
+      onAlertChangeRef.current?.(cached.alertLevel);
       const diff = Math.floor((Date.now() - new Date(cached.storageTimestamp).getTime()) / 1000);
-      setCountdown(Math.max(0, REFRESH_INTERVAL - diff));
+      const remaining = Math.max(0, REFRESH_INTERVAL - diff);
+      setCountdown(remaining);
+      // If cached data is older than the refresh interval, fetch fresh data
+      if (remaining <= 0) {
+        fetchReport();
+      }
     } else {
       fetchReport();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -159,13 +182,19 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <MapPin size={12} className="text-red-600" /> Áreas Afetadas
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {report.affectedAreas.map((area, i) => (
-                <Badge key={i} variant="outline" className="text-[9px] bg-slate-900 border-slate-800 text-slate-400 font-bold uppercase">
-                  {area}
-                </Badge>
-              ))}
-            </div>
+            {report.affectedAreas.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {report.affectedAreas.map((area, i) => (
+                  <Badge key={i} variant="outline" className="text-[9px] bg-slate-900 border-slate-800 text-slate-400 font-bold uppercase">
+                    {area}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-[10px] text-emerald-500 font-bold uppercase">
+                <CheckCircle2 size={14} /> Nenhuma área com incidentes confirmados
+              </div>
+            )}
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-800">

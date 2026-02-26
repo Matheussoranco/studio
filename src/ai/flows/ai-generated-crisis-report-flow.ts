@@ -136,7 +136,7 @@ function getWmoDescription(code: number): string {
 async function fetchCrisisNews(currentDateTime: string): Promise<string> {
   try {
     const searchResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-2.0-flash',
       prompt: `Pesquise e resuma as informacoes MAIS RECENTES e VERIFICAVEIS sobre a situacao em Juiz de Fora, MG, Brasil, especificamente:
 
 1. Chuvas e enchentes: Chuvas intensas, alagamentos, transbordamento de rios (Paraibuna, corregos)
@@ -168,9 +168,19 @@ Data/hora da consulta: ${currentDateTime}`,
     return `=== NOTICIAS E ALERTAS REAIS (Google Search) ===\n${searchResponse.text ?? 'Sem resultados de busca.'}`;
   } catch (e: any) {
     console.warn('[fetchCrisisNews] Google Search grounding falhou:', e?.message);
-    return `=== NOTICIAS E ALERTAS ===
+
+    // Fallback: tenta gerar sem grounding se o Search falhou
+    try {
+      const fallbackResponse = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        prompt: `Com base no seu conhecimento, resuma a situação mais provavel de chuvas e enchentes em Juiz de Fora, MG em fevereiro de 2026. Se não tem informações específicas, diga "Sem dados de noticias disponiveis. Baseie-se nos dados meteorologicos."\n\nData/hora: ${currentDateTime}`,
+      });
+      return `=== NOTICIAS E ALERTAS (fallback sem grounding) ===\n${fallbackResponse.text ?? 'Sem resultados.'}`;
+    } catch {
+      return `=== NOTICIAS E ALERTAS ===
 Busca web indisponivel: ${e?.message ?? 'erro desconhecido'}.
 Analise sera baseada apenas nos dados meteorologicos medidos.`;
+    }
   }
 }
 
@@ -184,7 +194,7 @@ export async function generateCrisisReport(input: { currentDateTime: string }): 
     ]);
 
     const { output } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-2.0-flash',
       output: { schema: AiGeneratedCrisisReportOutputSchema },
       prompt: `Voce e o Sistema de Monitoramento Inteligente da Defesa Civil de Juiz de Fora, MG.
 Analise os DADOS REAIS abaixo e gere um boletim ESTRITAMENTE FACTUAL.

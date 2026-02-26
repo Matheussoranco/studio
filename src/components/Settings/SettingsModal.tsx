@@ -28,8 +28,8 @@ export default function SettingsModal({ open, onOpenChange }: SettingsModalProps
           <div className="bg-green-950/30 border border-green-900/50 p-4 rounded-lg flex gap-3">
             <ShieldCheck className="text-green-500 shrink-0" size={20} />
             <div>
-              <p className="text-sm font-bold text-green-400">Claude AI Ativo</p>
-              <p className="text-[11px] text-green-600/80">O sistema está operando com uma chave mestre universal para boletins em tempo real.</p>
+              <p className="text-sm font-bold text-green-400">Google Gemini AI Ativo</p>
+              <p className="text-[11px] text-green-600/80">O sistema utiliza Gemini 1.5 Flash via Genkit com dados meteorológicos reais (Open-Meteo) e busca de notícias (Google Search Grounding) para boletins em tempo real.</p>
             </div>
           </div>
 
