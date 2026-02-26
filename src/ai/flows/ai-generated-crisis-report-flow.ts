@@ -29,7 +29,7 @@ export type AiGeneratedCrisisReportOutput = z.infer<typeof AiGeneratedCrisisRepo
 // Prompt definition
 const crisisReportPrompt = ai.definePrompt({
   name: 'crisisReportPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  // Removed explicit model to use the default configured in src/ai/genkit.ts
   input: { schema: AiGeneratedCrisisReportInputSchema },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
   prompt: `Você é um assistente de emergência para Juiz de Fora, MG. Gere um boletim de situação resumido (máx 150 palavras) sobre chuvas e alagamentos na cidade, com nível de alerta atual (VERDE/AMARELO/LARANJA/VERMELHO), principais áreas afetadas, e recomendações para a população. Use linguagem clara e direta. Data/hora atual: {{{currentDateTime}}}`,
