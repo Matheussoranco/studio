@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating an AI-powered crisis report for Juiz de Fora, MG.
@@ -28,9 +29,9 @@ export type AiGeneratedCrisisReportOutput = z.infer<typeof AiGeneratedCrisisRepo
 // Prompt definition
 const crisisReportPrompt = ai.definePrompt({
   name: 'crisisReportPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: AiGeneratedCrisisReportInputSchema },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
-  // Uses the default model (Gemini) defined in genkit.ts
   prompt: `Você é um assistente de emergência para Juiz de Fora, MG. Gere um boletim de situação resumido (máx 150 palavras) sobre chuvas e alagamentos na cidade, com nível de alerta atual (VERDE/AMARELO/LARANJA/VERMELHO), principais áreas afetadas, e recomendações para a população. Use linguagem clara e direta. Data/hora atual: {{{currentDateTime}}}`,
 });
 
