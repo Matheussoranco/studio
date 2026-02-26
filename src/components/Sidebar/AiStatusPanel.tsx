@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
 
-const REFRESH_INTERVAL = 10 * 60;
+const REFRESH_INTERVAL = 10 * 60; // 10 minutos
 
 interface AiStatusPanelProps {
   onMarkersUpdate?: (markers: AiGeneratedCrisisReportOutput['markers']) => void;
@@ -25,21 +25,22 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
   const { toast } = useToast();
 
   const fetchReport = useCallback(async () => {
-    const apiKey = getStorageItem(STORAGE_KEYS.API_KEY, '');
-    if (!apiKey) {
-      return;
-    }
-
     setLoading(true);
     try {
-      const data = await generateCrisisReport({ currentDateTime: new Date().toLocaleString('pt-BR') });
+      const data = await generateCrisisReport({ 
+        currentDateTime: new Date().toLocaleString('pt-BR') 
+      });
       setReport(data);
       if (onMarkersUpdate) onMarkersUpdate(data.markers);
       if (onAlertChange) onAlertChange(data.alertLevel);
       setStorageItem(STORAGE_KEYS.LAST_AI_REPORT, { ...data, lastUpdated: new Date().toISOString() });
       setCountdown(REFRESH_INTERVAL);
     } catch (error) {
-      toast({ variant: "destructive", title: "Erro de IA", description: "Falha ao atualizar boletim inteligente." });
+      toast({ 
+        variant: "destructive", 
+        title: "Erro de IA", 
+        description: "Falha ao atualizar boletim inteligente. Tente novamente mais tarde." 
+      });
     } finally {
       setLoading(false);
     }
@@ -73,25 +74,20 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  if (!getStorageItem(STORAGE_KEYS.API_KEY, '')) {
-    return (
-      <div className="p-6 h-full flex items-center justify-center bg-yellow-950/20">
-        <div className="text-center space-y-4">
-          <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto" />
-          <h3 className="font-black text-yellow-500">BOLETIM DESATIVADO</h3>
-          <p className="text-xs text-slate-400">Configure sua chave API nas ⚙️ Configurações para ativar os boletins de IA.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col p-4 space-y-6 overflow-y-auto no-scrollbar">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black flex items-center gap-2 uppercase tracking-tighter">
           <Cpu className="text-red-600" /> Situação Atual
         </h2>
-        <Button variant="ghost" size="icon" onClick={fetchReport} disabled={loading} className="h-8 w-8 text-slate-500">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={fetchReport} 
+          disabled={loading} 
+          className="h-8 w-8 text-slate-500"
+          aria-label="Atualizar agora"
+        >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
@@ -109,7 +105,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Boletim Factual</h3>
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Boletim Factual (Claude)</h3>
             <p className="text-sm text-slate-300 leading-relaxed font-medium">{report.summary}</p>
           </div>
 
@@ -139,7 +135,11 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
             </ul>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="p-10 text-center text-slate-500 text-xs italic">
+          Nenhum boletim gerado ainda. Clique em atualizar.
+        </div>
+      )}
     </div>
   );
 }

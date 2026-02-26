@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { Phone } from 'lucide-react';
 

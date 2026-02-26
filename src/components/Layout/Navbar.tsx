@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { ShieldAlert, Settings, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,9 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    const updateTime = () => {
-      setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-    };
+    const updateTime = () => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     updateTime();
-    const interval = setInterval(updateTime, 60000);
+    const interval = setInterval(updateTime, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -40,19 +38,17 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
       <nav className="h-14 border-b bg-slate-900 flex items-center justify-between px-4 fixed top-0 w-full z-50">
         <div className="flex items-center gap-2">
           <ShieldAlert className="text-red-600 w-6 h-6" />
-          <h1 className="text-lg font-bold text-white tracking-tighter">🚨 JF ALERTA</h1>
+          <h1 className="text-lg font-black text-white tracking-tighter uppercase">JF Alerta</h1>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end mr-2">
-            <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {time}
-            </span>
-          </div>
+          <span className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 font-black uppercase">
+            <Clock size={12} /> {time}
+          </span>
           <Badge className={`text-[10px] font-black uppercase px-2 py-0.5 border ${getAlertStyles(alertLevel)}`}>
             {alertLevel}
           </Badge>
-          <Button variant="ghost" size="icon" className="text-slate-400 h-9 w-9" onClick={() => setIsSettingsOpen(true)} aria-label="Configurações">
+          <Button variant="ghost" size="icon" className="text-slate-400 h-9 w-9" onClick={() => setIsSettingsOpen(true)}>
             <Settings className="w-5 h-5" />
           </Button>
         </div>
