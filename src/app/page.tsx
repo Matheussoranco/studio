@@ -43,13 +43,13 @@ export default function Home() {
       <Navbar alertLevel={alertLevel} />
       
       <main className="flex-1 mt-14 mb-12 flex flex-col lg:flex-row relative overflow-hidden">
-        {/* MAPA - Container com z-0 para ficar atrás de tudo */}
+        {/* MAPA - z-0 isolado */}
         <div className="flex-1 lg:flex-[0.65] relative h-full z-0 overflow-hidden">
           <EmergencyMap reports={reports} aiMarkers={aiMarkers} />
           
-          {/* Botão FAB (+) - z-index alto dentro do container do mapa, mas abaixo da Navbar global */}
+          {/* Botão FAB (+) - z-index alto para ficar acima do mapa e do rodapé mobile */}
           <Button 
-            className="fixed bottom-28 right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1050] pulse-red p-0"
+            className="fixed bottom-28 right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1350] pulse-red p-0"
             onClick={() => setIsReportOpen(true)}
             aria-label="Novo Relato"
           >
@@ -57,7 +57,7 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* SIDEBAR - z-10 para garantir separação visual */}
+        {/* SIDEBAR */}
         <div className="hidden lg:flex lg:flex-[0.35] bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col h-full">
             <TabsList className="bg-slate-950 rounded-none h-12 border-b border-slate-800 p-0">
@@ -74,14 +74,14 @@ export default function Home() {
           </Tabs>
         </div>
 
-        {/* MOBILE NAVIGATION BAR - z-index alto */}
+        {/* MOBILE NAVIGATION BAR */}
         <div className="lg:hidden fixed bottom-12 left-0 right-0 h-10 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-[1100]">
            <button onClick={() => setActiveTab('situacao')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'situacao' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Situação"><Cpu size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">IA</span></button>
            <button onClick={() => setActiveTab('relatos')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'relatos' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Relatos"><List size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">RELATOS</span></button>
            <button onClick={() => setActiveTab('doacoes')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'doacoes' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Doações"><Heart size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">DOAÇÕES</span></button>
         </div>
 
-        {/* MOBILE BOTTOM SHEET - z-index muito alto */}
+        {/* MOBILE BOTTOM SHEET */}
         <div className={`lg:hidden fixed inset-x-0 bottom-12 transition-all duration-500 z-[1200] bg-slate-900 rounded-t-2xl border-t border-slate-800 shadow-2xl ${activeTab ? 'h-[45dvh]' : 'h-0 translate-y-full'}`}>
            <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto my-3" />
            <div className="h-full overflow-hidden">
@@ -94,7 +94,6 @@ export default function Home() {
 
       <Footer />
       
-      {/* O Modal (Dialog) já possui z-[1300] no componente base ui/dialog.tsx */}
       <ReportModal open={isReportOpen} onOpenChange={setIsReportOpen} onReportAdded={handleReportAdded} />
     </div>
   );

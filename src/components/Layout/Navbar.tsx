@@ -35,7 +35,7 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
   return (
     <>
-      <nav className="h-14 border-b bg-slate-900 flex items-center justify-between px-4 fixed top-0 w-full z-[1100]">
+      <nav className="h-14 border-b bg-slate-900 flex items-center justify-between px-4 fixed top-0 w-full z-[1400]">
         <div className="flex items-center gap-2">
           <ShieldAlert className="text-red-600 w-6 h-6" />
           <h1 className="text-lg font-black text-white tracking-tighter uppercase">JF Alerta</h1>
@@ -45,7 +45,7 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
           <span className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 font-black uppercase">
             <Clock size={12} /> {time}
           </span>
-          <Badge className={`text-[10px] font-black uppercase px-2 py-0.5 border ${getAlertStyles(alertLevel)}`}>
+          <Badge className={`text-[10px] font-black uppercase px-2 py-0.5 border {getAlertStyles(alertLevel)}`}>
             {alertLevel}
           </Badge>
           <Button variant="ghost" size="icon" className="text-slate-400 h-9 w-9" onClick={() => setIsSettingsOpen(true)}>

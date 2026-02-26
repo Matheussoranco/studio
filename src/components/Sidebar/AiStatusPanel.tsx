@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, startTransition } from 'react';
 import { generateCrisisReport, AiGeneratedCrisisReportOutput } from '@/ai/flows/ai-generated-crisis-report-flow';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,16 +25,20 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
   const { toast } = useToast();
 
   const fetchReport = useCallback(async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const data = await generateCrisisReport({ 
         currentDateTime: new Date().toLocaleString('pt-BR') 
       });
-      setReport(data);
-      if (onMarkersUpdate) onMarkersUpdate(data.markers);
-      if (onAlertChange) onAlertChange(data.alertLevel);
-      setStorageItem(STORAGE_KEYS.LAST_AI_REPORT, { ...data, lastUpdated: new Date().toISOString() });
-      setCountdown(REFRESH_INTERVAL);
+      
+      startTransition(() => {
+        setReport(data);
+        if (onMarkersUpdate) onMarkersUpdate(data.markers);
+        if (onAlertChange) onAlertChange(data.alertLevel);
+        setStorageItem(STORAGE_KEYS.LAST_AI_REPORT, { ...data, lastUpdated: new Date().toISOString() });
+        setCountdown(REFRESH_INTERVAL);
+      });
     } catch (error) {
       toast({ 
         variant: "destructive", 
@@ -44,7 +48,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } finally {
       setLoading(false);
     }
-  }, [toast, onMarkersUpdate, onAlertChange]);
+  }, [toast, onMarkersUpdate, onAlertChange, loading]);
 
   useEffect(() => {
     const cached = getStorageItem<any>(STORAGE_KEYS.LAST_AI_REPORT, null);
@@ -57,20 +61,20 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } else {
       fetchReport();
     }
-  }, [fetchReport]);
+  }, []); // Só no mount inicial
+
+  useEffect(() => {
+    if (countdown <= 0 && !loading) {
+      fetchReport();
+    }
+  }, [countdown, fetchReport, loading]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          fetchReport();
-          return REFRESH_INTERVAL;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [fetchReport]);
+  }, []);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -105,7 +109,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Boletim Factual (Claude)</h3>
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Boletim Factual (Gemini)</h3>
             <p className="text-sm text-slate-300 leading-relaxed font-medium">{report.summary}</p>
           </div>
 
