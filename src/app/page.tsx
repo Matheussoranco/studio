@@ -13,7 +13,7 @@ import { CommunityReport, AiMarker, AlertLevel, Location } from '@/types';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, List, Heart, Cpu, MapPin, ExternalLink, Phone, ThumbsUp, Image as ImageIcon } from 'lucide-react';
+import { Plus, List, Heart, Cpu, MapPin, ExternalLink, Phone, ThumbsUp, Image as ImageIcon, Layers, Map } from 'lucide-react';
 import { DONATION_POINTS } from '@/data/seed-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ export default function Home() {
   const [alertLevel, setAlertLevel] = useState<AlertLevel>('VERDE');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('situacao');
+  const [mapView, setMapView] = useState<'live' | 'official'>('live');
 
   // Browser push notifications on alert escalation
   useAlertNotifications(alertLevel);
@@ -59,16 +60,63 @@ export default function Home() {
       <main className="flex-1 mt-14 mb-12 flex flex-col lg:flex-row relative overflow-hidden">
         {/* MAPA - z-0 isolado */}
         <div className="flex-1 lg:flex-[0.65] relative h-full z-0 overflow-hidden">
-          <EmergencyMap reports={reports} aiMarkers={aiMarkers} />
 
-          {/* WeatherWidget overlay */}
-          <div className="absolute bottom-16 left-2 z-[600] pointer-events-none select-none">
+          {/* Map toggle pill */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[900] flex items-center bg-slate-900/90 backdrop-blur border border-slate-700 rounded-full p-0.5 shadow-xl gap-0.5">
+            <button
+              onClick={() => setMapView('live')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                mapView === 'live'
+                  ? 'bg-red-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Layers size={11} /> Interativo
+            </button>
+            <button
+              onClick={() => setMapView('official')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${
+                mapView === 'official'
+                  ? 'bg-red-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Map size={11} /> Oficial
+            </button>
+          </div>
+
+          {/* Leaflet interactive map */}
+          <div className={`absolute inset-0 transition-opacity duration-300 ${
+            mapView === 'live' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}>
+            <EmergencyMap reports={reports} aiMarkers={aiMarkers} />
+          </div>
+
+          {/* Official Google My Maps — Defesa Civil JF */}
+          <div className={`absolute inset-0 transition-opacity duration-300 ${
+            mapView === 'official' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}>
+            <iframe
+              src="https://www.google.com/maps/d/embed?mid=1WONsDYluWx8kJKU5kl5G3fLEdS6u6z0&hl=pt-BR&ehbc=2E312F"
+              className="w-full h-full border-0"
+              title="Mapa Oficial — Prefeitura de Juiz de Fora"
+              loading="lazy"
+              allowFullScreen
+            />
+          </div>
+
+          {/* WeatherWidget overlay — only on live map */}
+          <div className={`absolute bottom-16 left-2 z-[600] pointer-events-none select-none transition-opacity duration-300 ${
+            mapView === 'live' ? 'opacity-100' : 'opacity-0'
+          }`}>
             <WeatherWidget />
           </div>
           
-          {/* Botão FAB (+) - z-index alto para ficar acima do mapa e do rodapé mobile */}
+          {/* Botão FAB (+) */}
           <Button 
-            className="fixed bottom-28 right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1350] pulse-red p-0"
+            className={`fixed bottom-28 right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1350] pulse-red p-0 transition-all duration-300 ${
+              mapView === 'official' ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'
+            }`}
             onClick={() => setIsReportOpen(true)}
             aria-label="Novo Relato"
           >
