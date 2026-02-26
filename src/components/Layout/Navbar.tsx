@@ -25,10 +25,10 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
   const getAlertStyles = (level: AlertLevel) => {
     switch (level) {
-      case 'VERDE': return 'bg-[#064e3b] text-[#10b981] border-[#059669]';
-      case 'AMARELO': return 'bg-[#451a03] text-[#f59e0b] border-[#d97706]';
-      case 'LARANJA': return 'bg-[#431407] text-[#f97316] border-[#ea580c]';
-      case 'VERMELHO': return 'bg-[#450a0a] text-[#ef4444] border-[#dc2626] pulse-red';
+      case 'VERDE': return 'bg-emerald-950/40 text-emerald-400 border-emerald-500/50';
+      case 'AMARELO': return 'bg-amber-950/40 text-amber-400 border-amber-500/50';
+      case 'LARANJA': return 'bg-orange-950/40 text-orange-400 border-orange-500/50';
+      case 'VERMELHO': return 'bg-red-950/40 text-red-400 border-red-500/50 pulse-red';
       default: return 'bg-slate-800 text-slate-400 border-slate-700';
     }
   };

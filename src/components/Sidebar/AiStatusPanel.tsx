@@ -1,17 +1,17 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { generateCrisisReport, AiGeneratedCrisisReportOutput } from '@/ai/flows/ai-generated-crisis-report-flow';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Clock, AlertTriangle, ShieldCheck, MapPin, Cpu, Radio } from 'lucide-react';
+import { RefreshCw, Clock, MapPin, Cpu, Radio, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
 
-const REFRESH_INTERVAL = 5 * 60; // Reduzido para 5 minutos para maior agilidade
+const REFRESH_INTERVAL = 300; // 5 minutos
 
 interface AiStatusPanelProps {
   onMarkersUpdate?: (markers: AiGeneratedCrisisReportOutput['markers']) => void;
@@ -22,10 +22,11 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
   const [report, setReport] = useState<(AiGeneratedCrisisReportOutput & { lastUpdated?: string }) | null>(null);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const fetchReport = useCallback(async () => {
-    if (loading) return;
+    if (loading || isPending) return;
     setLoading(true);
     try {
       const data = await generateCrisisReport({ 
@@ -33,9 +34,9 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
       });
       
       const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      
+      const enrichedReport = { ...data, lastUpdated: timestamp };
+
       startTransition(() => {
-        const enrichedReport = { ...data, lastUpdated: timestamp };
         setReport(enrichedReport);
         if (onMarkersUpdate) onMarkersUpdate(data.markers);
         if (onAlertChange) onAlertChange(data.alertLevel);
@@ -45,13 +46,13 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } catch (error) {
       toast({ 
         variant: "destructive", 
-        title: "Erro de IA", 
-        description: "Falha ao sincronizar boletim factual." 
+        title: "Erro de Sincronismo", 
+        description: "Não foi possível conectar com a Defesa Civil agora." 
       });
     } finally {
       setLoading(false);
     }
-  }, [toast, onMarkersUpdate, onAlertChange, loading]);
+  }, [toast, onMarkersUpdate, onAlertChange, loading, isPending]);
 
   useEffect(() => {
     const cached = getStorageItem<any>(STORAGE_KEYS.LAST_AI_REPORT, null);
@@ -64,20 +65,20 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } else {
       fetchReport();
     }
-  }, []);
-
-  useEffect(() => {
-    if (countdown <= 0 && !loading) {
-      fetchReport();
-    }
-  }, [countdown, fetchReport, loading]);
+  }, [onMarkersUpdate, onAlertChange]);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 1));
+      setCountdown((prev) => {
+        if (prev <= 1 && !loading && !isPending) {
+          fetchReport();
+          return REFRESH_INTERVAL;
+        }
+        return Math.max(0, prev - 1);
+      });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [fetchReport, loading, isPending]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -97,34 +98,30 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
         <h2 className="text-lg font-black flex items-center gap-2 uppercase tracking-tighter">
           <Cpu className="text-red-600" /> MONITORAMENTO IA
         </h2>
-        <div className="flex items-center gap-2">
-           {loading && <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />}
-           <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={fetchReport} 
-            disabled={loading} 
-            className="h-8 w-8 text-slate-500 hover:bg-slate-800"
-            aria-label="Atualizar agora"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-red-500' : ''}`} />
-          </Button>
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={fetchReport} 
+          disabled={loading || isPending} 
+          className="h-8 w-8 text-slate-500 hover:bg-slate-800"
+        >
+          <RefreshCw className={`w-4 h-4 ${(loading || isPending) ? 'animate-spin text-red-500' : ''}`} />
+        </Button>
       </div>
 
-      {loading && !report ? (
+      {(loading || isPending) && !report ? (
         <div className="space-y-4">
           <Skeleton className="h-20 w-full bg-slate-800/50" />
           <Skeleton className="h-40 w-full bg-slate-800/50" />
         </div>
       ) : report ? (
-        <div className="space-y-5" role="alert">
+        <div className="space-y-5">
           <div className="flex items-center justify-between bg-slate-900 p-3 rounded-lg border border-slate-800 shadow-inner">
             <Badge className={`${getAlertBadgeColor(report.alertLevel)} text-white font-black text-[10px] uppercase px-2 py-1`}>
               {report.alertLevel}
             </Badge>
             <div className="flex flex-col items-end">
-               <span className="text-[9px] font-mono text-slate-500 uppercase">Sincronismo em: {formatTime(countdown)}</span>
+               <span className="text-[9px] font-mono text-slate-500 uppercase">Auto-Sinc: {formatTime(countdown)}</span>
                <span className="text-[8px] font-black text-emerald-500/70 uppercase">Fatos das {report.lastUpdated}</span>
             </div>
           </div>
@@ -134,7 +131,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Radio size={12} className="text-red-600" /> Boletim Factual
               </h3>
-              <p className="text-sm text-slate-200 leading-relaxed font-semibold antialiased">
+              <p className="text-sm text-slate-200 leading-relaxed font-semibold">
                 {report.summary}
               </p>
             </CardContent>
@@ -142,24 +139,24 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <MapPin size={12} className="text-red-600" /> Áreas Críticas Confirmadas
+              <MapPin size={12} className="text-red-600" /> Áreas Críticas
             </h3>
             <div className="flex flex-wrap gap-2">
-              {report.affectedAreas.length > 0 ? report.affectedAreas.map((area, i) => (
-                <Badge key={i} variant="outline" className="text-[9px] bg-slate-900 border-slate-800 text-slate-400 px-2 py-1 font-bold">
+              {report.affectedAreas.map((area, i) => (
+                <Badge key={i} variant="outline" className="text-[9px] bg-slate-900 border-slate-800 text-slate-400 font-bold uppercase">
                   {area}
                 </Badge>
-              )) : <span className="text-[10px] text-slate-600 italic">Nenhuma área crítica reportada</span>}
+              ))}
             </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-800">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <ShieldCheck size={12} className="text-green-600" /> Orientações de Segurança
+              <ShieldCheck size={12} className="text-green-600" /> Segurança
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2">
               {report.recommendations.map((rec, i) => (
-                <li key={i} className="text-[11px] text-slate-300 flex gap-2 leading-tight">
+                <li key={i} className="text-[11px] text-slate-300 flex gap-2 leading-tight font-medium">
                   <span className="text-red-600 font-black">•</span> {rec}
                 </li>
               ))}
@@ -167,9 +164,9 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
           </div>
         </div>
       ) : (
-        <div className="p-10 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest flex flex-col items-center gap-4">
+        <div className="p-10 text-center text-slate-500 text-[10px] font-black uppercase flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 opacity-20" />
-          Nenhum boletim factual gerado.
+          Aguardando boletim...
         </div>
       )}
     </div>

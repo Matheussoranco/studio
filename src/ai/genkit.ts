@@ -6,5 +6,5 @@ export const ai = genkit({
   plugins: [
     googleAI(),
   ],
-  model: 'googleai/gemini-2.0-flash-exp', // Modelo de última geração solicitado
+  model: 'googleai/gemini-1.5-flash',
 });
