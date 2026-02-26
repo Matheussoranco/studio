@@ -1,20 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Layout/Navbar';
 import Footer from '@/components/Layout/Footer';
 import AiStatusPanel from '@/components/Sidebar/AiStatusPanel';
 import ReportModal from '@/components/Reports/ReportModal';
+import EmergencyContacts from '@/components/Sidebar/EmergencyContacts';
+import WeatherWidget from '@/components/Map/WeatherWidget';
 import { CommunityReport, AiMarker, AlertLevel, Location } from '@/types';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, List, Heart, Cpu, MapPin, ExternalLink } from 'lucide-react';
+import { Plus, List, Heart, Cpu, MapPin, ExternalLink, Phone, ThumbsUp, Image as ImageIcon } from 'lucide-react';
 import { DONATION_POINTS } from '@/data/seed-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAlertNotifications } from '@/hooks/use-alert-notifications';
 
 const EmergencyMap = dynamic(() => import('@/components/Map/DynamicMap'), { 
   ssr: false,
@@ -28,6 +31,9 @@ export default function Home() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('situacao');
 
+  // Browser push notifications on alert escalation
+  useAlertNotifications(alertLevel);
+
   useEffect(() => {
     setReports(getStorageItem<CommunityReport[]>(STORAGE_KEYS.REPORTS, []));
   }, []);
@@ -38,6 +44,14 @@ export default function Home() {
     setStorageItem(STORAGE_KEYS.REPORTS, updated);
   };
 
+  const handleUpvote = useCallback((id: string) => {
+    setReports(prev => {
+      const updated = prev.map(r => r.id === id ? { ...r, upvotes: (r.upvotes ?? 0) + 1 } : r);
+      setStorageItem(STORAGE_KEYS.REPORTS, updated);
+      return updated;
+    });
+  }, []);
+
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-950 overflow-hidden relative">
       <Navbar alertLevel={alertLevel} />
@@ -46,6 +60,11 @@ export default function Home() {
         {/* MAPA - z-0 isolado */}
         <div className="flex-1 lg:flex-[0.65] relative h-full z-0 overflow-hidden">
           <EmergencyMap reports={reports} aiMarkers={aiMarkers} />
+
+          {/* WeatherWidget overlay */}
+          <div className="absolute bottom-16 left-2 z-[600] pointer-events-none select-none">
+            <WeatherWidget />
+          </div>
           
           {/* Botão FAB (+) - z-index alto para ficar acima do mapa e do rodapé mobile */}
           <Button 
@@ -61,24 +80,27 @@ export default function Home() {
         <div className="hidden lg:flex lg:flex-[0.35] bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col h-full">
             <TabsList className="bg-slate-950 rounded-none h-12 border-b border-slate-800 p-0">
-              <TabsTrigger value="situacao" className="flex-1 gap-2 text-[10px] font-black uppercase data-[state=active]:bg-slate-900"><Cpu size={14}/> Situação</TabsTrigger>
-              <TabsTrigger value="relatos" className="flex-1 gap-2 text-[10px] font-black uppercase data-[state=active]:bg-slate-900"><List size={14}/> Relatos</TabsTrigger>
-              <TabsTrigger value="doacoes" className="flex-1 gap-2 text-[10px] font-black uppercase data-[state=active]:bg-slate-900"><Heart size={14}/> Doações</TabsTrigger>
+              <TabsTrigger value="situacao" className="flex-1 gap-1 text-[9px] font-black uppercase data-[state=active]:bg-slate-900"><Cpu size={12}/> Situação</TabsTrigger>
+              <TabsTrigger value="relatos" className="flex-1 gap-1 text-[9px] font-black uppercase data-[state=active]:bg-slate-900"><List size={12}/> Relatos</TabsTrigger>
+              <TabsTrigger value="doacoes" className="flex-1 gap-1 text-[9px] font-black uppercase data-[state=active]:bg-slate-900"><Heart size={12}/> Doações</TabsTrigger>
+              <TabsTrigger value="sos" className="flex-1 gap-1 text-[9px] font-black uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-red-400"><Phone size={12}/> SOS</TabsTrigger>
             </TabsList>
             
             <div className="flex-1 overflow-hidden">
               <TabsContent value="situacao" className="h-full m-0"><AiStatusPanel onMarkersUpdate={setAiMarkers} onAlertChange={setAlertLevel} /></TabsContent>
-              <TabsContent value="relatos" className="h-full m-0 overflow-y-auto p-4 no-scrollbar"><RelatosList reports={reports} /></TabsContent>
+              <TabsContent value="relatos" className="h-full m-0 overflow-y-auto p-4 no-scrollbar"><RelatosList reports={reports} onUpvote={handleUpvote} /></TabsContent>
               <TabsContent value="doacoes" className="h-full m-0 overflow-y-auto p-4 no-scrollbar"><DonationsList centers={DONATION_POINTS} /></TabsContent>
+              <TabsContent value="sos" className="h-full m-0 overflow-y-auto no-scrollbar"><EmergencyContacts /></TabsContent>
             </div>
           </Tabs>
         </div>
 
         {/* MOBILE NAVIGATION BAR */}
         <div className="lg:hidden fixed bottom-12 left-0 right-0 h-10 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-[1100]">
-           <button onClick={() => setActiveTab('situacao')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'situacao' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Situação"><Cpu size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">IA</span></button>
-           <button onClick={() => setActiveTab('relatos')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'relatos' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Relatos"><List size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">RELATOS</span></button>
-           <button onClick={() => setActiveTab('doacoes')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'doacoes' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Doações"><Heart size={18}/><span className="text-[8px] font-black uppercase tracking-tighter">DOAÇÕES</span></button>
+           <button onClick={() => setActiveTab('situacao')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'situacao' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Situação"><Cpu size={18}/><span className="text-[7px] font-black uppercase">IA</span></button>
+           <button onClick={() => setActiveTab('relatos')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'relatos'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Relatos"><List size={18}/><span className="text-[7px] font-black uppercase">RELATOS</span></button>
+           <button onClick={() => setActiveTab('doacoes')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'doacoes'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Doações"><Heart size={18}/><span className="text-[7px] font-black uppercase">DOAÇÕES</span></button>
+           <button onClick={() => setActiveTab('sos')}      className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'sos'      ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba SOS"><Phone size={18}/><span className="text-[7px] font-black uppercase">SOS</span></button>
         </div>
 
         {/* MOBILE BOTTOM SHEET */}
@@ -86,8 +108,9 @@ export default function Home() {
            <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto my-3" />
            <div className="h-full overflow-hidden">
               {activeTab === 'situacao' && <AiStatusPanel onMarkersUpdate={setAiMarkers} onAlertChange={setAlertLevel} />}
-              {activeTab === 'relatos' && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><RelatosList reports={reports} /></div>}
-              {activeTab === 'doacoes' && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><DonationsList centers={DONATION_POINTS} /></div>}
+              {activeTab === 'relatos'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><RelatosList reports={reports} onUpvote={handleUpvote} /></div>}
+              {activeTab === 'doacoes'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><DonationsList centers={DONATION_POINTS} /></div>}
+              {activeTab === 'sos'      && <EmergencyContacts />}
            </div>
         </div>
       </main>
@@ -99,11 +122,19 @@ export default function Home() {
   );
 }
 
-function RelatosList({ reports }: { reports: CommunityReport[] }) {
+function RelatosList({ reports, onUpvote }: { reports: CommunityReport[]; onUpvote: (id: string) => void }) {
+  const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+
   if (reports.length === 0) return <div className="p-10 text-center text-[10px] text-slate-600 font-bold uppercase tracking-widest">Nenhum relato confirmado</div>;
 
   return (
     <div className="space-y-3">
+      {expandedPhoto && (
+        <div className="fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center" onClick={() => setExpandedPhoto(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={expandedPhoto} alt="relato" className="max-w-[95vw] max-h-[90vh] rounded-lg shadow-2xl" />
+        </div>
+      )}
       {reports.map((r) => (
         <Card key={r.id} className="bg-slate-800/50 border-slate-700/50">
           <CardContent className="p-3">
@@ -113,6 +144,31 @@ function RelatosList({ reports }: { reports: CommunityReport[] }) {
              </div>
              <p className="text-xs font-black text-white uppercase tracking-tight mb-1">{r.neighborhood}</p>
              <p className="text-[11px] text-slate-400 italic line-clamp-2">"{r.description}"</p>
+             {r.photo && (
+               <button
+                 className="mt-2 w-full"
+                 onClick={() => setExpandedPhoto(r.photo!)}
+                 title="Ver foto"
+               >
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                 <img src={r.photo} alt="foto do relato" className="w-full h-24 object-cover rounded border border-slate-700 hover:opacity-80 transition-opacity" />
+               </button>
+             )}
+             <div className="mt-2 flex items-center gap-2">
+               <button
+                 onClick={() => onUpvote(r.id)}
+                 className="flex items-center gap-1 text-[9px] font-black text-slate-500 hover:text-blue-400 transition-colors"
+                 title="Confirmar relato"
+               >
+                 <ThumbsUp size={11} /> {r.upvotes ?? 0} confirm.
+               </button>
+               {r.gpsAccuracy && (
+                 <span className="text-[8px] text-emerald-600 font-bold flex items-center gap-0.5">
+                   <MapPin size={9} /> GPS ±{r.gpsAccuracy.toFixed(0)}m
+                 </span>
+               )}
+               {r.photo && <ImageIcon size={9} className="text-slate-500" />}
+             </div>
           </CardContent>
         </Card>
       ))}

@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, LayerGroup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, LayerGroup, Tooltip, useMap } from 'react-leaflet';
 import { JF_CENTER, RISK_ZONES, SAFE_ZONES, DONATION_POINTS } from '@/data/seed-data';
 import { CommunityReport, AiMarker } from '@/types';
 import { Home, Heart, AlertTriangle, Cpu, Droplets, Mountain, Ban, Power, UserRound, CheckCircle2 } from 'lucide-react';
@@ -55,6 +55,49 @@ const riskStyle = (severity: number) => ({
   dashArray:   severity === 3 ? undefined : '6 4',
 });
 
+// Locate-me control
+function LocateControl() {
+  const map = useMap();
+  const [locating, setLocating] = useState(false);
+
+  const locate = useCallback(() => {
+    setLocating(true);
+    map.locate({ setView: true, maxZoom: 16 });
+    const done = () => { setLocating(false); map.off('locationfound locationerror', done); };
+    map.once('locationfound', done);
+    map.once('locationerror', done);
+  }, [map]);
+
+  return (
+    <div
+      role="button"
+      title="Minha localização"
+      onClick={locate}
+      style={{
+        position: 'absolute',
+        bottom: 100,
+        right: 10,
+        zIndex: 1000,
+        width: 36,
+        height: 36,
+        background: '#1e293b',
+        border: '2px solid #475569',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: locating ? 16 : 20,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+        transition: 'opacity .2s',
+        opacity: locating ? 0.6 : 1,
+      }}
+    >
+      {locating ? '⏳' : '📍'}
+    </div>
+  );
+}
+
 interface MapProps {
   reports: CommunityReport[];
   aiMarkers: AiMarker[];
@@ -80,12 +123,25 @@ export default function EmergencyMap({ reports, aiMarkers }: MapProps) {
       className="w-full h-full"
       zoomControl={false}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
       <LayersControl position="topright">
+        <LayersControl.BaseLayer name="🗺️ Padrão (OSM)" checked>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="🌑 Escuro (CartoDB)">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer name="🗺️ Satélite (Esri)">
+          <TileLayer
+            attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        </LayersControl.BaseLayer>
         {/* ── Zonas de Risco (Circle em metros, escala com o zoom) ── */}
         <LayersControl.Overlay name="⚠️ Zonas de Risco" checked>
           <LayerGroup>
@@ -196,6 +252,6 @@ export default function EmergencyMap({ reports, aiMarkers }: MapProps) {
           </LayerGroup>
         </LayersControl.Overlay>
       </LayersControl>
-    </MapContainer>
+      <LocateControl />    </MapContainer>
   );
 }

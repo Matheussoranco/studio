@@ -9,7 +9,8 @@
  *   3. INMET Previsão  — Previsão 7 dias para JF IBGE 3136702 (gratuito)
  *   4. CEMADEN         — Acumulado de chuva estações pluviométricas JF (gratuito)
  *   5. Climatempo      — Previsão + atual (opcional — CLIMATEMPO_API_TOKEN env var)
- *   6. Google Search   — Notícias e alertas em tempo real via Gemini Grounding
+ *   6. ANA Telemetria  — Nível e cota do Rio Paraibuna (gratuito, sem key)
+ *   7. Google Search   — Notícias e alertas em tempo real via Gemini Grounding
  */
 
 import { ai } from '@/ai/genkit';
@@ -283,7 +284,34 @@ async function fetchClimatempoData(): Promise<string> {
   }
 }
 
-// ── 6. Google Search Grounding — Notícias em tempo real ─────────────────────
+// ── 6. ANA Telemetria — Rio Paraibuna (Estação 58082000) ───────────────────
+async function fetchAnaRiverLevel(): Promise<string> {
+  try {
+    const fmt = (d: Date) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    const end   = fmt(new Date());
+    const start = fmt(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    const url = `https://telemetriaws1.ana.gov.br/ServiceANA.asmx/DadosHidrometeorologicos?codEstacao=58082000&dataInicio=${start}&dataFim=${end}`;
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return `=== ANA TELEMETRIA ===\nHTTP ${res.status}.`;
+    const xml = await res.text();
+    // Extract last few readings (Nivel and DataHora tags)
+    const nivelMatches  = [...xml.matchAll(/<Nivel>(.*?)<\/Nivel>/g)].slice(-5).map(m => m[1]);
+    const dateMatches   = [...xml.matchAll(/<DataHora>(.*?)<\/DataHora>/g)].slice(-5).map(m => m[1]);
+    const chuvaMatches  = [...xml.matchAll(/<Chuva>(.*?)<\/Chuva>/g)].slice(-5).map(m => m[1]);
+    if (nivelMatches.length === 0) return `=== ANA TELEMETRIA ===\nSem leituras recentes para a estação 58082000 (Rio Paraibuna).`;
+    let out = `=== ANA TELEMETRIA — Rio Paraibuna (Estação 58082000) ===\n`;
+    out += `Últimas leituras:\n`;
+    for (let i = 0; i < nivelMatches.length; i++) {
+      out += `  ${dateMatches[i] ?? '-'} | Nível: ${nivelMatches[i]}m | Chuva: ${chuvaMatches[i] ?? '-'}mm\n`;
+    }
+    return out;
+  } catch (e: any) {
+    console.warn('[fetchAnaRiverLevel]', e?.message);
+    return `=== ANA TELEMETRIA ===\nFalha: ${e?.message}.`;
+  }
+}
+
+// ── 7. Google Search Grounding — Notícias em tempo real ─────────────────────
 async function fetchLiveNews(currentDateTime: string): Promise<string> {
   try {
     const res = await ai.generate({
@@ -331,13 +359,14 @@ export async function generateCrisisReport(
   input: { currentDateTime: string }
 ): Promise<AiGeneratedCrisisReportOutput> {
   try {
-    const [openMeteo, inmetAlerts, inmetForecast, cemaden, climatempo, liveNews] =
+    const [openMeteo, inmetAlerts, inmetForecast, cemaden, climatempo, anaRiver, liveNews] =
       await Promise.all([
         fetchOpenMeteo(),
         fetchInmetAlerts(),
         fetchInmetForecast(),
         fetchCemadenData(),
         fetchClimatempoData(),
+        fetchAnaRiverLevel(),
         fetchLiveNews(input.currentDateTime),
       ]);
 
@@ -357,6 +386,8 @@ ${inmetForecast}
 ${cemaden}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${climatempo}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${anaRiver}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${liveNews}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

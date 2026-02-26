@@ -36,7 +36,31 @@ export interface CommunityReport {
   lat: number;
   lng: number;
   timestamp: string;
+  /** Optional base-64 encoded photo attached by the reporter */
+  photo?: string;
+  /** GPS accuracy in metres when the location was captured automatically */
+  gpsAccuracy?: number;
+  /** Community upvote count — used to signal report credibility */
+  upvotes?: number;
 }
+
+export interface AiMarker {
+  lat: number;
+  lng: number;
+  description: string;
+  type: 'alagamento' | 'deslizamento' | 'bloqueio' | 'atencao';
+  severity: number;
+}
+
+export interface CrisisReport {
+  summary: string;
+  alertLevel: AlertLevel;
+  affectedAreas: string[];
+  recommendations: string[];
+  markers: AiMarker[];
+  lastUpdated: string;
+}
+
 
 export interface AiMarker {
   lat: number;

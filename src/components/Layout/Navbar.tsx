@@ -1,12 +1,13 @@
 
 'use client';
 
-import { ShieldAlert, Settings, Clock } from 'lucide-react';
+import { ShieldAlert, Settings, Clock, Wifi, WifiOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import SettingsModal from '@/components/Settings/SettingsModal';
 import { AlertLevel } from '@/types';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 
 interface NavbarProps {
   alertLevel?: AlertLevel;
@@ -14,12 +15,18 @@ interface NavbarProps {
 
 export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
   const [time, setTime] = useState('');
+  const [date, setDate] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const online = useOnlineStatus();
 
   useEffect(() => {
-    const updateTime = () => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-    updateTime();
-    const interval = setInterval(updateTime, 10000);
+    const update = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      setDate(now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    };
+    update();
+    const interval = setInterval(update, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -53,7 +60,10 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
         <div className="flex items-center gap-3">
           <span className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 font-black uppercase">
-            <Clock size={12} /> {time}
+            <Clock size={12} /> {date} {time}
+          </span>
+          <span title={online ? 'Online' : 'Offline'} className={`text-lg leading-none ${online ? 'text-emerald-400' : 'text-red-500 animate-pulse'}`}>
+            {online ? <Wifi size={14} /> : <WifiOff size={14} />}
           </span>
           <Badge className={`text-[10px] font-black uppercase px-3 py-1 border-2 ${getAlertStyles(alertLevel)} transition-all duration-500`}>
             ALERTA {alertLevel}

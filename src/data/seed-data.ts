@@ -111,3 +111,37 @@ export const JF_BAIRROS = [
   'Santa Helena', 'Bandeirantes', 'Vitorino Braga', 'São Pedro', 'Linhares', 'Bom Pastor', 'Teixeiras',
   'Cruzeiro do Sul', 'Retiro', 'Cerâmica', 'São Benedito', 'Nossa Sra. de Fátima', 'Outros'
 ];
+
+/** Approximate centre coordinates for each neighbourhood, used as fallback
+ *  when GPS geolocation is unavailable in ReportModal. */
+export const BAIRRO_COORDS: Record<string, { lat: number; lng: number }> = {
+  'Centro':             { lat: -21.7600, lng: -43.3500 },
+  'São Mateus':         { lat: -21.7720, lng: -43.3550 },
+  'Santa Luzia':        { lat: -21.7850, lng: -43.3400 },
+  'Igrejinha':          { lat: -21.7120, lng: -43.4000 },
+  'Borboleta':          { lat: -21.7750, lng: -43.3700 },
+  'Progresso':          { lat: -21.7530, lng: -43.3800 },
+  'Ipiranga':           { lat: -21.7580, lng: -43.3320 },
+  'Grajaú':             { lat: -21.7650, lng: -43.3280 },
+  'Cascatinha':         { lat: -21.7300, lng: -43.3800 },
+  'Benfica':            { lat: -21.7400, lng: -43.3550 },
+  'Mariano Procópio':   { lat: -21.7820, lng: -43.3460 },
+  'Nova Era':           { lat: -21.7670, lng: -43.3440 },
+  'Fátima':             { lat: -21.7500, lng: -43.3600 },
+  'Jardim Glória':      { lat: -21.7440, lng: -43.3420 },
+  'Manoel Honório':     { lat: -21.7690, lng: -43.3600 },
+  'Santa Helena':       { lat: -21.7700, lng: -43.3540 },
+  'Bandeirantes':       { lat: -21.7560, lng: -43.3680 },
+  'Vitorino Braga':     { lat: -21.7550, lng: -43.3450 },
+  'São Pedro':          { lat: -21.7800, lng: -43.3690 },
+  'Linhares':           { lat: -21.7510, lng: -43.3600 },
+  'Bom Pastor':         { lat: -21.7620, lng: -43.3601 },
+  'Teixeiras':          { lat: -21.6500, lng: -43.3200 },
+  'Cruzeiro do Sul':    { lat: -21.7620, lng: -43.3350 },
+  'Retiro':             { lat: -21.7480, lng: -43.3720 },
+  'Cerâmica':           { lat: -21.7700, lng: -43.3380 },
+  'São Benedito':       { lat: -21.7660, lng: -43.3520 },
+  'Nossa Sra. de Fátima': { lat: -21.7500, lng: -43.3600 },
+  'Outros':             { lat: -21.7642, lng: -43.3503 },
+};
+
