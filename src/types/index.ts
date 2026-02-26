@@ -21,13 +21,15 @@ export interface Location {
 export interface RiskZone {
   id: string;
   name: string;
-  coordinates: [number, number][]; // Polygon
+  lat: number;
+  lng: number;
   severity: number;
+  radius: number;
 }
 
 export interface CommunityReport {
   id: string;
-  type: 'alagamento' | 'deslizamento' | 'via_bloqueada' | 'area_segura';
+  type: 'alagamento' | 'deslizamento' | 'via_bloqueada' | 'area_segura' | 'falta_energia' | 'pessoa_ilhada';
   description: string;
   neighborhood: string;
   severity: 1 | 2 | 3;

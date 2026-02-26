@@ -11,25 +11,20 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 198 93% 65%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 0 84% 60%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 217 32% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 32% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 180 82% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 0 84% 60%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 32% 17%;
     --input: 217 32% 17%;
-    --ring: 198 93% 65%;
-    --radius: 0.75rem;
-
-    --alert-verde: 142 71% 45%;
-    --alert-amarelo: 48 96% 53%;
-    --alert-laranja: 24 95% 53%;
-    --alert-vermelho: 0 84% 60%;
+    --ring: 0 84% 60%;
+    --radius: 0.5rem;
   }
 }
 
@@ -38,8 +33,19 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, sans-serif;
+    height: 100dvh;
+    overflow: hidden;
   }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .leaflet-container {
@@ -48,24 +54,13 @@
   background: #0f172a !important;
 }
 
-.leaflet-popup-content-wrapper {
-  background: hsl(var(--card)) !important;
-  color: hsl(var(--foreground)) !important;
-  border-radius: var(--radius) !important;
-  border: 1px solid hsl(var(--border)) !important;
+.pulse-red {
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  animation: pulse-red 2s infinite;
 }
 
-.leaflet-popup-tip {
-  background: hsl(var(--card)) !important;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 10px;
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }

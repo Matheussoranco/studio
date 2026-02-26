@@ -1,65 +1,63 @@
 
 "use client";
 
-import { ShieldAlert, Settings, Bell, Menu, X } from 'lucide-react';
+import { ShieldAlert, Settings, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import AiStatusPanel from '@/components/Sidebar/AiStatusPanel';
+import SettingsModal from '@/components/Settings/SettingsModal';
+import { AlertLevel } from '@/types';
 
-export default function Navbar() {
+interface NavbarProps {
+  alertLevel?: AlertLevel;
+}
+
+export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
   const [time, setTime] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
-    setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-    const interval = setInterval(() => {
+    const updateTime = () => {
       setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
-    }, 1000 * 60);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
 
+  const getAlertStyles = (level: AlertLevel) => {
+    switch (level) {
+      case 'VERDE': return 'bg-[#14532d] text-[#4ade80] border-[#16a34a]';
+      case 'AMARELO': return 'bg-[#713f12] text-[#fbbf24] border-[#d97706]';
+      case 'LARANJA': return 'bg-[#7c2d12] text-[#fb923c] border-[#ea580c]';
+      case 'VERMELHO': return 'bg-[#450a0a] text-[#f87171] border-[#dc2626] pulse-red';
+      default: return '';
+    }
+  };
+
   return (
-    <nav className="h-16 border-b bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 fixed top-0 w-full z-50">
-      <div className="flex items-center gap-3">
-        <div className="bg-primary/20 p-2 rounded-lg">
-          <ShieldAlert className="text-primary w-6 h-6" />
+    <>
+      <nav className="h-14 border-b bg-slate-900 flex items-center justify-between px-4 fixed top-0 w-full z-50">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="text-red-600 w-6 h-6" />
+          <h1 className="text-lg font-bold text-white tracking-tighter">🚨 JF ALERTA</h1>
         </div>
-        <div>
-          <h1 className="text-lg font-headline font-black tracking-tighter text-slate-50 uppercase leading-none">
-            JF Alerta
-          </h1>
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
-            Emergência Juiz de Fora
-          </p>
-        </div>
-      </div>
 
-      <div className="hidden md:flex items-center gap-4">
-        <div className="flex flex-col items-end">
-          <Badge variant="outline" className="border-primary/30 text-primary text-[10px] px-2 py-0 h-5">
-            Monitoramento Ativo
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex flex-col items-end mr-2">
+            <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1">
+              <Clock className="w-3 h-3" /> {time}
+            </span>
+          </div>
+          <Badge className={`text-[10px] font-black uppercase px-2 py-0.5 border ${getAlertStyles(alertLevel)}`}>
+            {alertLevel}
           </Badge>
-          <span className="text-[10px] text-muted-foreground font-mono">Última atualização: {time}</span>
+          <Button variant="ghost" size="icon" className="text-slate-400 h-9 w-9" onClick={() => setIsSettingsOpen(true)} aria-label="Configurações">
+            <Settings className="w-5 h-5" />
+          </Button>
         </div>
-        <div className="h-8 w-[1px] bg-slate-800" />
-        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-primary">
-          <Settings className="w-5 h-5" />
-        </Button>
-      </div>
-
-      <div className="md:hidden flex items-center gap-2">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-primary">
-              <Bell className="w-6 h-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-[80vh] p-0 rounded-t-3xl border-slate-800 bg-slate-950">
-            <AiStatusPanel />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </nav>
+      </nav>
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+    </>
   );
 }
