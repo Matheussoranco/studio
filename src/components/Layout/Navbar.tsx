@@ -24,7 +24,7 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
   const getAlertStyles = (level: AlertLevel) => {
     switch (level) {
-      case 'VERDE': return 'bg-emerald-950/40 text-emerald-400 border-emerald-500/50';
+      case 'VERDE': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
       case 'AMARELO': return 'bg-amber-950/40 text-amber-400 border-amber-500/50';
       case 'LARANJA': return 'bg-orange-950/40 text-orange-400 border-orange-500/50';
       case 'VERMELHO': return 'bg-red-950/40 text-red-400 border-red-500/50 pulse-red';
@@ -55,7 +55,7 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
             <Clock size={12} /> {time}
           </span>
           <Badge className={`text-[10px] font-black uppercase px-2 py-0.5 border ${getAlertStyles(alertLevel)} transition-all duration-500`}>
-            {alertLevel}
+            ALERTA {alertLevel}
           </Badge>
           <Button variant="ghost" size="icon" className="text-slate-400 h-9 w-9" onClick={() => setIsSettingsOpen(true)}>
             <Settings className="w-5 h-5" />

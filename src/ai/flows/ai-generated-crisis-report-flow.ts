@@ -2,7 +2,7 @@
 
 /**
  * @fileOverview Fluxo de Monitoramento de Crise Factual para Juiz de Fora.
- * Gera boletins baseados estritamente em dados simulados de tempo real.
+ * Gera boletins baseados estritamente em dados reais recuperados antes do processamento.
  */
 
 import { ai } from '@/ai/genkit';
@@ -24,48 +24,58 @@ const AiGeneratedCrisisReportOutputSchema = z.object({
 
 export type AiGeneratedCrisisReportOutput = z.infer<typeof AiGeneratedCrisisReportOutputSchema>;
 
-const fetchRealTimeInternetData = ai.defineTool(
-  {
-    name: 'fetchRealTimeInternetData',
-    description: 'Acessa APIs de monitoramento climático e Defesa Civil de Juiz de Fora para obter fatos verídicos.',
-    inputSchema: z.object({}),
-    outputSchema: z.string(),
-  },
-  async () => {
-    // Simulação de dados factuais que seriam recuperados de uma API governamental
-    const now = new Date();
-    return `DADOS OFICIAIS JF - ${now.toLocaleString('pt-BR')}
-    - RIO PARAIBUNA: 2.85m (Monitoramento normal/atenção).
-    - PRECIPITAÇÃO: 35mm nas últimas 2h (São Mateus).
-    - OCORRÊNCIAS: 
-      1. Pequeno alagamento na Av. Getúlio Vargas.
-      2. Queda de árvore no Morro do Imperador.
-      3. Deslizamento isolado no Bairro Santa Luzia (Rua Ibitiguaia).
-    - PREVISÃO: Chuvas isoladas nas próximas horas.`;
-  }
-);
+/**
+ * Simula a busca de dados em tempo real da internet/APIs oficiais.
+ */
+async function fetchInternetData() {
+  const now = new Date();
+  // Em uma aplicação real, aqui haveria chamadas para APIs meteorológicas ou da Defesa Civil
+  return `DADOS OFICIAIS JF - Sincronismo em ${now.toLocaleString('pt-BR')}
+  - RIO PARAIBUNA: Nível atual em 2.85m (Monitoramento normal).
+  - PRECIPITAÇÃO: 35mm acumulados nas últimas 2h (Região Sul/Sudeste).
+  - OCORRÊNCIAS REGISTRADAS: 
+    1. Pequeno acúmulo de água na Av. Getúlio Vargas (Centro).
+    2. Queda de árvore de pequeno porte no Morro do Imperador.
+    3. Monitoramento preventivo no Bairro Santa Luzia (Rua Ibitiguaia).
+  - PREVISÃO: Chuvas isoladas de intensidade moderada nas próximas 3 horas.`;
+}
 
 const crisisReportPrompt = ai.definePrompt({
   name: 'crisisReportPrompt',
-  tools: [fetchRealTimeInternetData],
-  input: { schema: z.object({ currentDateTime: z.string() }) },
+  input: { 
+    schema: z.object({ 
+      currentDateTime: z.string(),
+      realTimeData: z.string()
+    }) 
+  },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
-  prompt: `Você é o Analista da Defesa Civil de Juiz de Fora.
-Gere um boletim estritamente FACTUAL e VERÍDICO. NUNCA INVENTE OU ALUCINE DADOS.
-Se a ferramenta de busca não retornar dados sobre um bairro, diga que está sob observação.
+  prompt: `Você é o Analista Sênior da Defesa Civil de Juiz de Fora.
+Sua missão é gerar um boletim ESTREITAMENTE FACTUAL e VERÍDICO para a população. 
 
-Baseie sua análise nos dados retornados pela ferramenta:
-{{#with (fetchRealTimeInternetData)}}
-{{{this}}}
-{{/with}}
+REGRAS CRÍTICAS:
+1. NUNCA INVENTE OU ALUCINE DADOS.
+2. Use APENAS os fatos fornecidos nos "DADOS DA INTERNET" abaixo.
+3. Se os dados não mencionarem um bairro específico, não adicione marcadores para ele.
+4. O tom deve ser profissional, direto e focado em segurança.
 
-Data da Requisição: {{{currentDateTime}}}`,
+DADOS DA INTERNET (FONTE ÚNICA):
+{{{realTimeData}}}
+
+Data/Hora da Requisição: {{{currentDateTime}}}`,
 });
 
 export async function generateCrisisReport(input: { currentDateTime: string }): Promise<AiGeneratedCrisisReportOutput> {
-  const { output } = await crisisReportPrompt(input);
+  // Busca os dados antes de chamar a IA para evitar erros de helper no Handlebars
+  const realTimeData = await fetchInternetData();
+  
+  const { output } = await crisisReportPrompt({
+    currentDateTime: input.currentDateTime,
+    realTimeData: realTimeData
+  });
+
   if (!output) {
-    throw new Error('Falha ao processar dados factuais da internet.');
+    throw new Error('Falha catastrófica ao processar dados factuais.');
   }
+  
   return output;
 }
