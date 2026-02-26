@@ -25,7 +25,7 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
   const getAlertStyles = (level: AlertLevel) => {
     switch (level) {
-      case 'VERDE': return 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]';
+      case 'VERDE': return 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]';
       case 'AMARELO': return 'bg-amber-500 text-black border-amber-400';
       case 'LARANJA': return 'bg-orange-600 text-white border-orange-400';
       case 'VERMELHO': return 'bg-red-600 text-white border-red-400 pulse-red';
@@ -35,8 +35,8 @@ export default function Navbar({ alertLevel = 'VERDE' }: NavbarProps) {
 
   const getIconColor = (level: AlertLevel) => {
     switch (level) {
-      case 'VERDE': return 'text-emerald-500';
-      case 'AMARELO': return 'text-amber-500';
+      case 'VERDE': return 'text-emerald-400';
+      case 'AMARELO': return 'text-amber-400';
       case 'LARANJA': return 'text-orange-500';
       case 'VERMELHO': return 'text-red-600';
       default: return 'text-slate-400';

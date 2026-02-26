@@ -75,19 +75,19 @@
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
 
-/* UI Elevada para garantir acessibilidade sobre o mapa */
-[role="dialog"], .radix-dialog-content {
-  z-index: 2000 !important;
+/* UI Elevada para garantir acessibilidade absoluta sobre o mapa */
+[role="dialog"], .radix-dialog-content, [data-state="open"] {
+  z-index: 1500 !important;
 }
 
 nav {
-  z-index: 1500 !important;
-}
-
-.fixed.bottom-28 {
   z-index: 1450 !important;
 }
 
-header, footer {
-  z-index: 1500 !important;
+footer {
+  z-index: 1450 !important;
+}
+
+.fixed.bottom-28 {
+  z-index: 1400 !important;
 }

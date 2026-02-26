@@ -5,7 +5,7 @@ import { generateCrisisReport, AiGeneratedCrisisReportOutput } from '@/ai/flows/
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, MapPin, Cpu, Radio, ShieldCheck } from 'lucide-react';
+import { RefreshCw, MapPin, Cpu, Radio, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
@@ -20,6 +20,7 @@ interface AiStatusPanelProps {
 export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStatusPanelProps) {
   const [report, setReport] = useState<(AiGeneratedCrisisReportOutput & { lastUpdated?: string }) | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
   const fetchReport = useCallback(async () => {
     if (loading || isPending) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await generateCrisisReport({ 
         currentDateTime: new Date().toLocaleString('pt-BR') 
@@ -44,10 +46,11 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
       });
     } catch (error) {
       console.error('Fetch Error:', error);
+      setError("Falha ao atualizar dados. Tente novamente.");
       toast({ 
         variant: "destructive", 
         title: "Erro de Sincronismo", 
-        description: "Servidor sobrecarregado. Tentando novamente em breve." 
+        description: "Servidor sobrecarregado ou chave de API inválida." 
       });
     } finally {
       setLoading(false);
@@ -71,14 +74,14 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          if (!loading && !isPending) fetchReport();
+          if (!loading && !isPending && !error) fetchReport();
           return REFRESH_INTERVAL;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [fetchReport, loading, isPending]);
+  }, [fetchReport, loading, isPending, error]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -113,6 +116,12 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
         <div className="space-y-4">
           <Skeleton className="h-20 w-full bg-slate-800/50" />
           <Skeleton className="h-40 w-full bg-slate-800/50" />
+        </div>
+      ) : error ? (
+        <div className="p-10 text-center text-slate-500 text-[10px] font-black uppercase flex flex-col items-center gap-4">
+          <AlertTriangle className="w-8 h-8 text-amber-500" />
+          <span className="text-amber-500">{error}</span>
+          <Button variant="outline" size="sm" onClick={fetchReport}>Tentar Novamente</Button>
         </div>
       ) : report ? (
         <div className="space-y-5">
