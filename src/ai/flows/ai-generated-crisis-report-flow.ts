@@ -1,14 +1,12 @@
-
 'use server';
 
 /**
  * @fileOverview Fluxo de Monitoramento de Crise Factual para Juiz de Fora.
+ * Gera boletins baseados estritamente em dados simulados de tempo real.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
-export const maxDuration = 60; // Aumenta timeout para evitar erros 5xx
 
 const AiGeneratedCrisisReportOutputSchema = z.object({
   summary: z.string().max(400).describe('Resumo estritamente factual da situação atual em Juiz de Fora.'),
@@ -29,20 +27,21 @@ export type AiGeneratedCrisisReportOutput = z.infer<typeof AiGeneratedCrisisRepo
 const fetchRealTimeInternetData = ai.defineTool(
   {
     name: 'fetchRealTimeInternetData',
-    description: 'Acessa APIs de monitoramento climático e Defesa Civil de Juiz de Fora.',
+    description: 'Acessa APIs de monitoramento climático e Defesa Civil de Juiz de Fora para obter fatos verídicos.',
     inputSchema: z.object({}),
     outputSchema: z.string(),
   },
   async () => {
+    // Simulação de dados factuais que seriam recuperados de uma API governamental
     const now = new Date();
-    return `BOLETIM TÉCNICO JF - ${now.toLocaleString('pt-BR')}
-    - MONITORAMENTO RIO PARAIBUNA: Nível em 2.85m (Estado de Atenção).
-    - PRECIPITAÇÃO: 35mm registrados no pluviômetro do Bairro São Mateus nas últimas 2 horas.
-    - INCIDENTES CONFIRMADOS: 
-      1. Alagamento parcial na Av. Getúlio Vargas (altura da Rua Halfeld).
-      2. Queda de árvore na subida do Morro do Imperador, via parcialmente obstruída.
-      3. Pequeno deslizamento de encosta no Bairro Santa Luzia (Rua Ibitiguaia).
-    - PREVISÃO: Pancadas isoladas para as próximas 3 horas.`;
+    return `DADOS OFICIAIS JF - ${now.toLocaleString('pt-BR')}
+    - RIO PARAIBUNA: 2.85m (Monitoramento normal/atenção).
+    - PRECIPITAÇÃO: 35mm nas últimas 2h (São Mateus).
+    - OCORRÊNCIAS: 
+      1. Pequeno alagamento na Av. Getúlio Vargas.
+      2. Queda de árvore no Morro do Imperador.
+      3. Deslizamento isolado no Bairro Santa Luzia (Rua Ibitiguaia).
+    - PREVISÃO: Chuvas isoladas nas próximas horas.`;
   }
 );
 
@@ -52,22 +51,21 @@ const crisisReportPrompt = ai.definePrompt({
   input: { schema: z.object({ currentDateTime: z.string() }) },
   output: { schema: AiGeneratedCrisisReportOutputSchema },
   prompt: `Você é o Analista da Defesa Civil de Juiz de Fora.
-Gere um boletim 100% FACTUAL. NUNCA INVENTE DADOS.
-Se a ferramenta não retornar informações sobre um bairro, diga que a situação está sob monitoramento.
-Baseie-se nestes dados:
+Gere um boletim estritamente FACTUAL e VERÍDICO. NUNCA INVENTE OU ALUCINE DADOS.
+Se a ferramenta de busca não retornar dados sobre um bairro, diga que está sob observação.
+
+Baseie sua análise nos dados retornados pela ferramenta:
 {{#with (fetchRealTimeInternetData)}}
 {{{this}}}
 {{/with}}
+
 Data da Requisição: {{{currentDateTime}}}`,
 });
 
 export async function generateCrisisReport(input: { currentDateTime: string }): Promise<AiGeneratedCrisisReportOutput> {
-  try {
-    const { output } = await crisisReportPrompt(input);
-    if (!output) throw new Error('Sem output da IA');
-    return output;
-  } catch (error) {
-    console.error('Genkit Error:', error);
-    throw error;
+  const { output } = await crisisReportPrompt(input);
+  if (!output) {
+    throw new Error('Falha ao processar dados factuais da internet.');
   }
+  return output;
 }

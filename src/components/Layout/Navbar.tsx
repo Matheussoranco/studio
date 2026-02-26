@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ShieldAlert, Settings, Clock } from 'lucide-react';

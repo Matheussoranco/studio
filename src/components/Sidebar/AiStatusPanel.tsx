@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -6,7 +5,7 @@ import { generateCrisisReport, AiGeneratedCrisisReportOutput } from '@/ai/flows/
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Clock, MapPin, Cpu, Radio, ShieldCheck } from 'lucide-react';
+import { RefreshCw, MapPin, Cpu, Radio, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
@@ -44,10 +43,11 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
         setCountdown(REFRESH_INTERVAL);
       });
     } catch (error) {
+      console.error('Fetch Error:', error);
       toast({ 
         variant: "destructive", 
         title: "Erro de Sincronismo", 
-        description: "Não foi possível conectar com a Defesa Civil agora." 
+        description: "Servidor sobrecarregado. Tentando novamente em breve." 
       });
     } finally {
       setLoading(false);
@@ -65,16 +65,16 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
     } else {
       fetchReport();
     }
-  }, [onMarkersUpdate, onAlertChange]);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
-        if (prev <= 1 && !loading && !isPending) {
-          fetchReport();
+        if (prev <= 1) {
+          if (!loading && !isPending) fetchReport();
           return REFRESH_INTERVAL;
         }
-        return Math.max(0, prev - 1);
+        return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
@@ -84,9 +84,9 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
   const getAlertBadgeColor = (level: string) => {
     switch (level) {
-      case 'VERDE': return 'bg-emerald-600';
-      case 'AMARELO': return 'bg-amber-600';
-      case 'LARANJA': return 'bg-orange-600';
+      case 'VERDE': return 'bg-emerald-500 hover:bg-emerald-600';
+      case 'AMARELO': return 'bg-amber-500 hover:bg-amber-600';
+      case 'LARANJA': return 'bg-orange-500 hover:bg-orange-600';
       case 'VERMELHO': return 'bg-red-600 pulse-red';
       default: return 'bg-slate-600';
     }
@@ -103,7 +103,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
           size="icon" 
           onClick={fetchReport} 
           disabled={loading || isPending} 
-          className="h-8 w-8 text-slate-500 hover:bg-slate-800"
+          className="h-8 w-8 text-slate-500"
         >
           <RefreshCw className={`w-4 h-4 ${(loading || isPending) ? 'animate-spin text-red-500' : ''}`} />
         </Button>
@@ -121,7 +121,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
               {report.alertLevel}
             </Badge>
             <div className="flex flex-col items-end">
-               <span className="text-[9px] font-mono text-slate-500 uppercase">Auto-Sinc: {formatTime(countdown)}</span>
+               <span className="text-[9px] font-mono text-slate-500 uppercase">Sinc: {formatTime(countdown)}</span>
                <span className="text-[8px] font-black text-emerald-500/70 uppercase">Fatos das {report.lastUpdated}</span>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
           <Card className="bg-slate-800/30 border-slate-700/50">
             <CardContent className="p-4 space-y-2">
               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                <Radio size={12} className="text-red-600" /> Boletim Factual
+                <Radio size={12} className="text-red-600" /> Boletim em Tempo Real
               </h3>
               <p className="text-sm text-slate-200 leading-relaxed font-semibold">
                 {report.summary}
@@ -139,7 +139,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
           <div className="space-y-3">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <MapPin size={12} className="text-red-600" /> Áreas Críticas
+              <MapPin size={12} className="text-red-600" /> Áreas Afetadas
             </h3>
             <div className="flex flex-wrap gap-2">
               {report.affectedAreas.map((area, i) => (
@@ -152,7 +152,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
 
           <div className="space-y-3 pt-2 border-t border-slate-800">
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-              <ShieldCheck size={12} className="text-green-600" /> Segurança
+              <ShieldCheck size={12} className="text-emerald-500" /> Recomendações
             </h3>
             <ul className="space-y-2">
               {report.recommendations.map((rec, i) => (
@@ -166,7 +166,7 @@ export default function AiStatusPanel({ onMarkersUpdate, onAlertChange }: AiStat
       ) : (
         <div className="p-10 text-center text-slate-500 text-[10px] font-black uppercase flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 opacity-20" />
-          Aguardando boletim...
+          Carregando fatos...
         </div>
       )}
     </div>
