@@ -13,7 +13,7 @@ import { CommunityReport, AiMarker, AlertLevel, Location } from '@/types';
 import { STORAGE_KEYS, getStorageItem, setStorageItem } from '@/lib/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, List, Heart, Cpu, MapPin, ExternalLink, Phone, ThumbsUp, Image as ImageIcon, Layers, Map } from 'lucide-react';
+import { Plus, List, Heart, Cpu, MapPin, ExternalLink, Phone, ThumbsUp, Image as ImageIcon, Layers, Map, ChevronDown } from 'lucide-react';
 import { DONATION_POINTS } from '@/data/seed-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,17 @@ export default function Home() {
   const [alertLevel, setAlertLevel] = useState<AlertLevel>('VERDE');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('situacao');
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [mapView, setMapView] = useState<'live' | 'official'>('live');
+
+  const handleTabPress = useCallback((tab: string) => {
+    if (sheetOpen && activeTab === tab) {
+      setSheetOpen(false);
+    } else {
+      setActiveTab(tab);
+      setSheetOpen(true);
+    }
+  }, [sheetOpen, activeTab]);
 
   // Browser push notifications on alert escalation
   useAlertNotifications(alertLevel);
@@ -112,7 +122,9 @@ export default function Home() {
           
           {/* Botão FAB (+) */}
           <Button 
-            className={`fixed bottom-28 right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1350] pulse-red p-0 transition-all duration-300 ${
+            className={`fixed right-6 lg:absolute lg:bottom-8 lg:right-8 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-[0_0_30px_rgba(220,38,38,0.5)] z-[1350] pulse-red p-0 transition-all duration-300 ${
+              sheetOpen ? 'bottom-[calc(50dvh+3.5rem)]' : 'bottom-28'
+            } ${
               mapView === 'official' ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'
             }`}
             onClick={() => setIsReportOpen(true)}
@@ -143,19 +155,31 @@ export default function Home() {
 
         {/* MOBILE NAVIGATION BAR */}
         <div className="lg:hidden fixed bottom-12 left-0 right-0 h-10 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-[1100]">
-           <button onClick={() => setActiveTab('situacao')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'situacao' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Situação"><Cpu size={18}/><span className="text-[7px] font-black uppercase">IA</span></button>
-           <button onClick={() => setActiveTab('relatos')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'relatos'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Relatos"><List size={18}/><span className="text-[7px] font-black uppercase">RELATOS</span></button>
-           <button onClick={() => setActiveTab('doacoes')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'doacoes'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Doações"><Heart size={18}/><span className="text-[7px] font-black uppercase">DOAÇÕES</span></button>
-           <button onClick={() => setActiveTab('sos')}      className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'sos'      ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba SOS"><Phone size={18}/><span className="text-[7px] font-black uppercase">SOS</span></button>
+           <button onClick={() => handleTabPress('situacao')} className={`flex flex-col items-center flex-1 py-1 transition-colors ${sheetOpen && activeTab === 'situacao' ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Situação"><Cpu size={18}/><span className="text-[7px] font-black uppercase">IA</span></button>
+           <button onClick={() => handleTabPress('relatos')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${sheetOpen && activeTab === 'relatos'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Relatos"><List size={18}/><span className="text-[7px] font-black uppercase">RELATOS</span></button>
+           <button onClick={() => handleTabPress('doacoes')}  className={`flex flex-col items-center flex-1 py-1 transition-colors ${sheetOpen && activeTab === 'doacoes'  ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba Doações"><Heart size={18}/><span className="text-[7px] font-black uppercase">DOAÇÕES</span></button>
+           <button onClick={() => handleTabPress('sos')}      className={`flex flex-col items-center flex-1 py-1 transition-colors ${sheetOpen && activeTab === 'sos'      ? 'text-red-500' : 'text-slate-500'}`} aria-label="Aba SOS"><Phone size={18}/><span className="text-[7px] font-black uppercase">SOS</span></button>
         </div>
 
         {/* MOBILE BOTTOM SHEET */}
-        <div className={`lg:hidden fixed inset-x-0 bottom-12 transition-all duration-500 z-[1200] bg-slate-900 rounded-t-2xl border-t border-slate-800 shadow-2xl ${activeTab ? 'h-[45dvh]' : 'h-0 translate-y-full'}`}>
-           <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto my-3" />
-           <div className="h-full overflow-hidden">
+        <div className={`lg:hidden fixed inset-x-0 bottom-12 transition-all duration-500 z-[1200] bg-slate-900 rounded-t-2xl border-t border-slate-800 shadow-2xl overflow-hidden ${
+          sheetOpen ? 'h-[50dvh] translate-y-0' : 'h-[50dvh] translate-y-full'
+        }`}>
+           {/* Drag handle + close button */}
+           <div className="flex items-center justify-center relative h-8 flex-shrink-0">
+             <div className="w-12 h-1 bg-slate-700 rounded-full" />
+             <button
+               onClick={() => setSheetOpen(false)}
+               className="absolute right-3 text-slate-500 hover:text-white transition-colors"
+               aria-label="Fechar painel"
+             >
+               <ChevronDown size={20} />
+             </button>
+           </div>
+           <div className="h-[calc(100%-2rem)] overflow-hidden">
               {activeTab === 'situacao' && <AiStatusPanel onMarkersUpdate={setAiMarkers} onAlertChange={setAlertLevel} />}
-              {activeTab === 'relatos'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><RelatosList reports={reports} onUpvote={handleUpvote} /></div>}
-              {activeTab === 'doacoes'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-24"><DonationsList centers={DONATION_POINTS} /></div>}
+              {activeTab === 'relatos'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-6"><RelatosList reports={reports} onUpvote={handleUpvote} /></div>}
+              {activeTab === 'doacoes'  && <div className="p-4 h-full overflow-y-auto no-scrollbar pb-6"><DonationsList centers={DONATION_POINTS} /></div>}
               {activeTab === 'sos'      && <EmergencyContacts />}
            </div>
         </div>
